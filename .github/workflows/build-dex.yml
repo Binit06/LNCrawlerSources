@@ -27,7 +27,7 @@ jobs:
 
       - name: Package Compiled Classes into Jar
         run: |
-          cd app/build/tmp/kotlin-classes/debug/
+          cd app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/
           
           jar cvf crawlers.jar com/halovoid/lncrawlersources/
           
