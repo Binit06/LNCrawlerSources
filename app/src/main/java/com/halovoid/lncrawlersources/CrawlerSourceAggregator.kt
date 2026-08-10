@@ -8,4 +8,8 @@ class CrawlerSourceAggregator {
             NovelBins()
         )
     }
+
+    fun getMinAppVersion(): String {
+        return "1.0.0"
+    }
 }
