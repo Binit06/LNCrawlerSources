@@ -2,9 +2,9 @@ package com.halovoid.lncrawlersources
 
 
 import android.util.Log
-import com.halovoid.lncrawlersources.api.core.crawler.Crawler
-import com.halovoid.lncrawlersources.domain.models.Chapter
-import com.halovoid.lncrawlersources.domain.models.Novel
+import com.halovoid.lncrawler.api.core.crawler.Crawler
+import com.halovoid.lncrawler.domain.models.Chapter
+import com.halovoid.lncrawler.domain.models.Novel
 import okhttp3.FormBody
 import org.json.JSONArray
 import org.jsoup.Jsoup

@@ -1,15 +1,15 @@
-name: Build and Export DEX
+name: Release
 
 on:
   push:
-    branches: ['main']
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
-  build-dex:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Compile Kotlin Classes via gradle
+      - name: Build with Gradle
         run: ./gradlew assembleDebug
 
       - name: Package Compiled Classes into Jar
@@ -39,13 +39,11 @@ jobs:
           D8_PATH=$(find $ANDROID_HOME/build-tools -name "d8" | sort -r | head -n 1)
           $D8_PATH $GITHUB_WORKSPACE/crawlers.jar --output $GITHUB_WORKSPACE/
 
-      - name: Create or Update Release
+      - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: "latest"
-          name: "Latest Crawlers"
-          body: "Automatically generated classes.dex from the latest commit."
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Release generated from tag ${{ github.ref_name }}."
           artifacts: "classes.dex"
-          allowUpdates: true # Overwrites the release if it already exists
-          replacesArtifacts: true # Overwrites the old classes.dex
           token: ${{ secrets.GITHUB_TOKEN }}

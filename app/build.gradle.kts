@@ -47,6 +47,7 @@ dependencies {
     testImplementation(libs.junit)
     implementation(libs.jsoup)
     implementation(libs.okhttp)
+    compileOnly("com.github.Binit06:LNCrawler:v1.0.3-beta")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

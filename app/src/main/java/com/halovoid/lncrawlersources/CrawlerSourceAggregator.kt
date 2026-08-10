@@ -1,6 +1,6 @@
 package com.halovoid.lncrawlersources
 
-import com.halovoid.lncrawlersources.api.core.crawler.Crawler
+import com.halovoid.lncrawler.api.core.crawler.Crawler
 
 class CrawlerSourceAggregator {
     fun getCrawlers(): List<Crawler> {

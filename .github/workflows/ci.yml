@@ -1,0 +1,38 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug
+
+      - name: Package Compiled Classes into Jar
+        run: |
+          cd app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/
+          jar cvf crawlers.jar com/halovoid/lncrawlersources/
+          mv crawlers.jar $GITHUB_WORKSPACE/
+
+      - name: Convert JAR to DEX using D8
+        run: |
+          D8_PATH=$(find $ANDROID_HOME/build-tools -name "d8" | sort -r | head -n 1)
+          $D8_PATH $GITHUB_WORKSPACE/crawlers.jar --output $GITHUB_WORKSPACE/
