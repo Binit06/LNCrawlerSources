@@ -1,4 +1,4 @@
-package com.halovoid.lncrawler.domain.models
+package com.halovoid.lncrawlersources.domain.models
 
 data class Volume (
     val id: String,
