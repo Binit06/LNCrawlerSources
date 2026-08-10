@@ -5,6 +5,9 @@ on:
     branches: ['main']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-dex:
     runs-on: ubuntu-latest
@@ -28,19 +31,21 @@ jobs:
       - name: Package Compiled Classes into Jar
         run: |
           cd app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/
-          
           jar cvf crawlers.jar com/halovoid/lncrawlersources/
-          
           mv crawlers.jar $GITHUB_WORKSPACE/
 
       - name: Convert JAR to DEX using D8
         run: |
           D8_PATH=$(find $ANDROID_HOME/build-tools -name "d8" | sort -r | head -n 1)
-          
           $D8_PATH $GITHUB_WORKSPACE/crawlers.jar --output $GITHUB_WORKSPACE/
 
-      - name: Upload DEX Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
         with:
-          name: crawler-classes-dex
-          path: classes.dex
+          tag: "latest"
+          name: "Latest Crawlers"
+          body: "Automatically generated classes.dex from the latest commit."
+          artifacts: "classes.dex"
+          allowUpdates: true # Overwrites the release if it already exists
+          replacesArtifacts: true # Overwrites the old classes.dex
+          token: ${{ secrets.GITHUB_TOKEN }}
