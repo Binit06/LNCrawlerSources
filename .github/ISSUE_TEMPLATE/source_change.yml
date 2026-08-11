@@ -1,4 +1,4 @@
-name: 🔄 Source Website Change
+name: Source Website Change
 description: Report a change to a website that affects an existing crawler
 title: "[Source Change]: "
 labels: ["crawler", "bug"]
