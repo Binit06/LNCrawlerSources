@@ -35,7 +35,6 @@ class NovelFull : Crawler() {
 
         val chapters = mutableListOf<Chapter>()
 
-        // Handle pagination for chapters
         val pagination = doc.select("ul.pagination")
         val totalPages = if (pagination.isNotEmpty()) {
             val lastPageLink = pagination.select("li.last a").attr("href")
