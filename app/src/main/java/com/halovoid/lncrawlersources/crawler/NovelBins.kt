@@ -1,5 +1,4 @@
-package com.halovoid.lncrawlersources
-
+package com.halovoid.lncrawlersources.crawler
 
 import android.util.Log
 import com.halovoid.lncrawler.api.core.crawler.Crawler
@@ -9,7 +8,6 @@ import okhttp3.FormBody
 import org.json.JSONArray
 import org.jsoup.Jsoup
 import java.io.IOException
-import kotlin.collections.emptyList
 
 /**
  * Crawler implementation for NovelBin (novelbins.com) in the Data layer.
@@ -36,7 +34,7 @@ class NovelBins : Crawler() {
 
         val author = doc.select(".novel-short-info p:contains(Author:)").text().replace("Author: ", "").trim()
         val coverUrl = doc.select("img.novel-photo").attr("abs:src")
-        val description = doc.select(".novel-short-info p")[7]?.text() ?: ""
+        val description = doc.select(".novel-short-info p").getOrNull(7)?.text() ?: "" //Handled Cases if the website changed its indexing pattern for Description
 
         // Novel ID extraction for AJAX chapter list
         // Try getting it from the URL slug first (e.g., solo-leveling-2750127 -> 2750127)
@@ -62,15 +60,17 @@ class NovelBins : Crawler() {
         if (tabLinks.isEmpty()) {
             // Fallback for simple pages
             doc.select(".chapters .mt-card-item h3.mt-card-name a").forEachIndexed { index, element ->
-                chapters.add(Chapter(
-                    id = 0,
-                    url = element.attr("abs:href"),
-                    novelUrl = novelUrl,
-                    title = element.text(),
-                    index = index,
-                    volumeId = "${novelUrl}_vol_${(index / chapterPerVolume) + 1}",
-                    fileLocation = null
-                ))
+                chapters.add(
+                    Chapter(
+                        id = 0,
+                        url = element.attr("abs:href"),
+                        novelUrl = novelUrl,
+                        title = element.text(),
+                        index = index,
+                        volumeId = "${novelUrl}_vol_${(index / chapterPerVolume) + 1}",
+                        fileLocation = null
+                    )
+                )
             }
         } else {
             // Paginated chapter lists via AJAX
@@ -89,16 +89,18 @@ class NovelBins : Crawler() {
             )
         }
 
-        return prepareNovel(Novel(
-            url = novelUrl,
-            title = title,
-            author = author,
-            coverUrl = coverUrl,
-            description = description,
-            chapters = finalChapters,
-            crawlerName = name,
-            alternativeNames = alternativeNames
-        ))
+        return prepareNovel(
+            Novel(
+                url = novelUrl,
+                title = title,
+                author = author,
+                coverUrl = coverUrl,
+                description = description,
+                chapters = finalChapters,
+                crawlerName = name,
+                alternativeNames = alternativeNames
+            )
+        )
     }
 
     override suspend fun getChapterContent(chapterUrl: String): String? {
@@ -153,15 +155,17 @@ class NovelBins : Crawler() {
                 val obj = jsonArray.getJSONObject(i)
                 val chapterNum = obj.getString("chapter")
                 val title = obj.getString("title")
-                chapters.add(Chapter(
-                    id = 0,
-                    url = "$baseUrl/novel/$permalink/chapter/$chapterNum/",
-                    novelUrl = refererUrl,
-                    title = title,
-                    index = 0,      //Placeholder - recalculated in prepareNovel
-                    volumeId = "",  //Placeholder - recalculated in prepareNovel
-                    fileLocation = null
-                ))
+                chapters.add(
+                    Chapter(
+                        id = 0,
+                        url = "$baseUrl/novel/$permalink/chapter/$chapterNum/",
+                        novelUrl = refererUrl,
+                        title = title,
+                        index = 0,      //Placeholder - recalculated in prepareNovel
+                        volumeId = "",  //Placeholder - recalculated in prepareNovel
+                        fileLocation = null
+                    )
+                )
             }
         } catch (e: Exception) {
             Log.e(name, "Error parsing AJAX response", e)
