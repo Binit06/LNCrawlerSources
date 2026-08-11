@@ -7,7 +7,7 @@ body:
     id: source
     attributes:
       label: Source
-      placeholder: ""
+      placeholder: "NovelBins"
     validations:
       required: true
 

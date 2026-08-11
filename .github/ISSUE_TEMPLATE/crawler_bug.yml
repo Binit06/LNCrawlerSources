@@ -8,7 +8,7 @@ body:
     attributes:
       label: Source
       description: Which novel source is affected?
-      placeholder: ""
+      placeholder: "NovelBins"
     validations:
       required: true
 
