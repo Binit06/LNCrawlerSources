@@ -1,0 +1,42 @@
+name: 🔄 Source Website Change
+description: Report a change to a website that affects an existing crawler
+title: "[Source Change]: "
+labels: ["crawler", "bug"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      placeholder: ""
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Affected URL
+      placeholder: "https://example.com/novel/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: change
+    attributes:
+      label: What changed?
+      description: Describe the website change if you know what caused the crawler to break.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Current behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

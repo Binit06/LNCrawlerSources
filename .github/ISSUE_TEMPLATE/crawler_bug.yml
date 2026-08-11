@@ -1,0 +1,69 @@
+name: Crawler Bug
+description: Report a problem with an existing crawler
+title: "[Crawler Bug]: "
+labels: ["bug", "crawler"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Which novel source is affected?
+      placeholder: ""
+    validations:
+      required: true
+
+  - type: input
+    id: novel_url
+    attributes:
+      label: Novel URL
+      description: Provide a URL that reproduces the problem.
+      placeholder: "https://example.com/novel/..."
+    validations:
+      required: true
+
+  - type: input
+    id: chapter_url
+    attributes:
+      label: Chapter URL
+      description: If the problem is related to chapter content, provide a chapter URL.
+      placeholder: "https://example.com/novel/.../chapter/..."
+
+  - type: dropdown
+    id: affected_area
+    attributes:
+      label: What is affected?
+      options:
+        - Novel metadata
+        - Chapter discovery
+        - Chapter content
+        - URL detection
+        - Pagination
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What went wrong?
+      description: Describe the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or errors
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional information

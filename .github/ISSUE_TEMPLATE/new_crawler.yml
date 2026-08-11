@@ -1,0 +1,37 @@
+name: New Crawler Request
+description: Request support for a new novel source
+title: "[New Crawler]: "
+labels: ["crawler", "enhancement"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source name
+      placeholder: "Example Novel Site"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Website URL
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example novel URLs
+      description: Provide one or more novel URLs from the source.
+      placeholder: |
+        https://example.com/novel/...
+        https://example.com/novel/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional information
+      description: Anything useful about the source or why it should be supported.
