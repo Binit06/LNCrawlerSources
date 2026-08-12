@@ -101,6 +101,7 @@ Once the crawler has been tested successfully, move the implementation into LNCr
 | :--- | :--- |
 | **NovelBins** | [novelbins.com](https://novelbins.com) |
 | **NovelFull** | [novelfull.com](https://novelfull.com) |
+| **NovGo** | [novgo.net](https://novgo.net) |
 
 ## Requirements
 
