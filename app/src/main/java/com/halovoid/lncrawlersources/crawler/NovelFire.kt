@@ -8,19 +8,19 @@ import org.jsoup.Jsoup
 import java.io.IOException
 
 /**
- * Crawler implementation for Novel Phoenix (novelphoenix.com) in the Data layer.
+ * Crawler implementation for Novel Fire (novelfire.net) in the Data layer.
  * This class handles the specific HTML structure of the site, utilizing Jsoup
  * for static parsing and iterating through paginated chapter lists.
  */
-class NovelPhoenix : Crawler() {
-    override val name: String = "Novel Phoenix"
-    override val baseUrl: String = "https://novelphoenix.com"
+class NovelFire : Crawler() {
+    override val name: String = "Novel Fire"
+    override val baseUrl: String = "https://novelfire.net"
     override val webviewNeeded: Boolean = false
 
     override val chapterPerVolume: Int = 100 // Adjust as needed for local app logic
 
     override fun canHandle(url: String): Boolean {
-        return url.contains("novelphoenix.com")
+        return url.contains("novelfire.net")
     }
 
     override suspend fun getNovelDetails(novelUrl: String): Novel {
@@ -39,12 +39,12 @@ class NovelPhoenix : Crawler() {
 
         val chapters = mutableListOf<Chapter>()
 
-        // Novel Phoenix hosts chapters on a separate subpage: /chapters
+        // Novel Fire hosts chapters on a separate subpage: /chapters
         val chapterListUrl = "$cleanNovelUrl/chapters"
         val chaptersDoc = getDocument(chapterListUrl)
 
         if (chaptersDoc != null) {
-            // Determine maximum pages for pagination
+            // Determine maximum pages for pagination (if applicable)
             var maxPage = 1
             chaptersDoc.select("ul.pagination li.page-item a.page-link").forEach { element ->
                 val pageUrl = element.attr("href")

@@ -15,6 +15,7 @@ import java.io.IOException
 class Novgo : Crawler() {
     override val name: String = "Novgo"
     override val baseUrl: String = "https://novgo.net"
+    override val webviewNeeded: Boolean = false
 
     override val chapterPerVolume: Int = 100
 

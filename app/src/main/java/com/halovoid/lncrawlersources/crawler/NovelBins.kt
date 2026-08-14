@@ -17,6 +17,7 @@ import java.io.IOException
 class NovelBins : Crawler() {
     override val name: String = "NovelBins"
     override val baseUrl: String = "https://novelbins.com"
+    override val webviewNeeded: Boolean = false
 
     override val chapterPerVolume: Int = 50
 

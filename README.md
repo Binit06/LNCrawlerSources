@@ -97,11 +97,13 @@ Once the crawler has been tested successfully, move the implementation into LNCr
 
 ## Supported Sources
 
-| Source | Website |
-| :--- | :--- |
-| **NovelBins** | [novelbins.com](https://novelbins.com) |
-| **NovelFull** | [novelfull.com](https://novelfull.com) |
-| **NovGo** | [novgo.net](https://novgo.net) |
+| Source            | Website                                      |
+|:------------------|:---------------------------------------------|
+| **Novel Bins**    | [novelbins.com](https://novelbins.com)       |
+| **Novel Full**    | [novelfull.com](https://novelfull.com)       |
+| **Nov Go**        | [novgo.net](https://novgo.net)               |
+| **Novel Phoenix** | [novelphoenix.com](https://novelphoenix.com) |
+| **Novel Fire**    | [novelfire.net](https://novelfire.net)    |
 
 ## Requirements
 

@@ -15,6 +15,7 @@ import java.io.IOException
 class NovelFull : Crawler() {
     override val name: String = "NovelFull"
     override val baseUrl: String = "https://novelfull.com"
+    override val webviewNeeded: Boolean = false
 
     override val chapterPerVolume: Int = 100
 

@@ -12,8 +12,8 @@ android {
         applicationId = "com.halovoid.lncrawlersources"
         minSdk = 24
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,5 +36,5 @@ dependencies {
     testImplementation(libs.junit)
     implementation(libs.jsoup)
     implementation(libs.okhttp)
-    compileOnly("com.github.Binit06:LNCrawler:v1.0.1")
+    compileOnly("com.github.Binit06:LNCrawler:v1.0.4")
 }
