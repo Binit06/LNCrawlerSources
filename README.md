@@ -103,7 +103,8 @@ Once the crawler has been tested successfully, move the implementation into LNCr
 | **Novel Full**    | [novelfull.com](https://novelfull.com)       |
 | **Nov Go**        | [novgo.net](https://novgo.net)               |
 | **Novel Phoenix** | [novelphoenix.com](https://novelphoenix.com) |
-| **Novel Fire**    | [novelfire.net](https://novelfire.net)    |
+| **Novel Fire**    | [novelfire.net](https://novelfire.net)       |
+| **Royal Road**    | [royalroad.com](https://www.royalroad.com)   |
 
 ## Requirements
 

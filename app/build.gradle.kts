@@ -36,5 +36,5 @@ dependencies {
     testImplementation(libs.junit)
     implementation(libs.jsoup)
     implementation(libs.okhttp)
-    compileOnly("com.github.Binit06:LNCrawler:v1.0.4")
+    compileOnly(libs.lncrawler)
 }
