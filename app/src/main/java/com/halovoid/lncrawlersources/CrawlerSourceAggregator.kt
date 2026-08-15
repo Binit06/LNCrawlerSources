@@ -6,6 +6,7 @@ import com.halovoid.lncrawlersources.crawler.NovelFire
 import com.halovoid.lncrawlersources.crawler.NovelFull
 import com.halovoid.lncrawlersources.crawler.NovelPhoenix
 import com.halovoid.lncrawlersources.crawler.Novgo
+import com.halovoid.lncrawlersources.crawler.RoyalRoad
 
 class CrawlerSourceAggregator {
     fun getCrawlers(): List<Crawler> {
@@ -14,11 +15,12 @@ class CrawlerSourceAggregator {
             NovelFull(),
             Novgo(),
             NovelPhoenix(),
-            NovelFire()
+            NovelFire(),
+            RoyalRoad()
         )
     }
 
     fun getMinAppVersion(): String {
-        return "1.0.0"
+        return "1.0.4"
     }
 }

@@ -13,7 +13,7 @@ import java.io.IOException
  * paginated chapter lists.
  */
 class Novgo : Crawler() {
-    override val name: String = "Novgo"
+    override val name: String = "Nov Go"
     override val baseUrl: String = "https://novgo.net"
     override val webviewNeeded: Boolean = false
 

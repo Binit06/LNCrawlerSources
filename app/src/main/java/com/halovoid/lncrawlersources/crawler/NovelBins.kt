@@ -15,7 +15,7 @@ import java.io.IOException
  * using Jsoup for static parsing and custom logic for paginated chapter lists.
  */
 class NovelBins : Crawler() {
-    override val name: String = "NovelBins"
+    override val name: String = "Novel Bins"
     override val baseUrl: String = "https://novelbins.com"
     override val webviewNeeded: Boolean = false
 

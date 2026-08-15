@@ -13,7 +13,7 @@ import java.io.IOException
  * paginated chapter lists.
  */
 class NovelFull : Crawler() {
-    override val name: String = "NovelFull"
+    override val name: String = "Novel Full"
     override val baseUrl: String = "https://novelfull.com"
     override val webviewNeeded: Boolean = false
 
