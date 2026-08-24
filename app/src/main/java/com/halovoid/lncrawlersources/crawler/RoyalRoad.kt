@@ -1,6 +1,7 @@
 package com.halovoid.lncrawlersources.crawler
 
 import android.util.Log
+import com.halovoid.lncrawler.api.core.config.CrawlerConfig
 import com.halovoid.lncrawler.api.core.crawler.Crawler
 import com.halovoid.lncrawler.domain.models.Chapter
 import com.halovoid.lncrawler.domain.models.Novel
@@ -17,6 +18,13 @@ class RoyalRoad : Crawler() {
     override val name: String = "Royal Road"
     override val baseUrl: String = "https://www.royalroad.com"
     override val webviewNeeded: Boolean = false
+
+    override val config: CrawlerConfig
+        get() = _config ?: CrawlerConfig(
+            userFolderLocation = "",
+            maxAttempts = 3,
+            runnerConcurrency = 3
+        )
 
     override val chapterPerVolume: Int = 50
 
