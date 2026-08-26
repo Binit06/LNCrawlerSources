@@ -34,9 +34,9 @@ class NovelBins : Crawler() {
         return url.contains("novelbins.com") || url.contains("novelbin.com")
     }
 
-    override suspend fun getNovelDetails(novelUrl: String): Novel {
+    override suspend fun getNovelMetadata(novelUrl: String): Novel {
         val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch novel details from $novelUrl")
-        Log.i(name, "Scraping novel: $novelUrl")
+        Log.i(name, "Scraping novel metadata: $novelUrl")
 
         val titleElement = doc.select(".novel-short-info h1").first()
         val title = titleElement?.ownText() ?: ""
@@ -44,28 +44,36 @@ class NovelBins : Crawler() {
 
         val author = doc.select(".novel-short-info p:contains(Author:)").text().replace("Author: ", "").trim()
         val coverUrl = doc.select("img.novel-photo").attr("abs:src")
-        val description = doc.select(".novel-short-info p").getOrNull(7)?.text() ?: "" //Handled Cases if the website changed its indexing pattern for Description
+        val description = doc.select(".novel-short-info p").getOrNull(7)?.text() ?: ""
+
+        return Novel(
+            url = novelUrl,
+            title = title,
+            author = author,
+            coverUrl = coverUrl,
+            description = description,
+            chapters = emptyList(),
+            crawlerName = name,
+            alternativeNames = alternativeNames
+        )
+    }
+
+    override suspend fun getChapterList(novelUrl: String): List<Chapter> {
+        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch chapter list from $novelUrl")
+        Log.i(name, "Scraping chapter list: $novelUrl")
 
         // Novel ID extraction for AJAX chapter list
-        // Try getting it from the URL slug first (e.g., solo-leveling-2750127 -> 2750127)
         val permalink = novelUrl.removeSuffix("/").split("/").last()
         var novelId = permalink.split("-").lastOrNull { it.all { c -> c.isDigit() } } ?: ""
 
-        // Fallback: extract from bookmark link: javascript:bookmark('107187','1')
+        // Fallback: extract from bookmark link
         if (novelId.isEmpty()) {
             val bookmarkLink = doc.select("a[href^='javascript:bookmark']").attr("href")
             novelId = bookmarkLink.substringAfter("'").substringBefore("'")
         }
 
-        Log.i(name, "Internal ID: $novelId, Permalink: $permalink")
-
-        if (novelId.isEmpty()) {
-            Log.e(name, "Could not extract Novel ID from $novelUrl")
-        }
-
         val chapters = mutableListOf<Chapter>()
         val tabLinks = doc.select("a.ch[data-toggle='tab']")
-        Log.i("TAB", "${tabLinks.size}")
 
         if (tabLinks.isEmpty()) {
             // Fallback for simple pages
@@ -77,7 +85,7 @@ class NovelBins : Crawler() {
                         novelUrl = novelUrl,
                         title = element.text(),
                         index = index,
-                        volumeId = "${novelUrl}_vol_${(index / chapterPerVolume) + 1}",
+                        volumeId = "",
                         fileLocation = null
                     )
                 )
@@ -92,25 +100,18 @@ class NovelBins : Crawler() {
         }
 
         // Clean up duplicate entries and set final indices
-        val finalChapters = chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
+        return chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
             chapter.copy(
                 index = index + 1,
                 volumeId = "${novelUrl}_vol_${(index / chapterPerVolume) + 1}"
             )
         }
+    }
 
-        return prepareNovel(
-            Novel(
-                url = novelUrl,
-                title = title,
-                author = author,
-                coverUrl = coverUrl,
-                description = description,
-                chapters = finalChapters,
-                crawlerName = name,
-                alternativeNames = alternativeNames
-            )
-        )
+    override suspend fun getNovelDetails(novelUrl: String): Novel {
+        val metadata = getNovelMetadata(novelUrl)
+        val chapters = getChapterList(novelUrl)
+        return prepareNovel(metadata.copy(chapters = chapters))
     }
 
     override suspend fun getChapterContent(chapterUrl: String): String? {
@@ -171,8 +172,8 @@ class NovelBins : Crawler() {
                         url = "$baseUrl/novel/$permalink/chapter/$chapterNum/",
                         novelUrl = refererUrl,
                         title = title,
-                        index = 0,      //Placeholder - recalculated in prepareNovel
-                        volumeId = "",  //Placeholder - recalculated in prepareNovel
+                        index = 0,      //Placeholder - recalculated in getChapterList
+                        volumeId = "",  //Placeholder - recalculated in getChapterList
                         fileLocation = null
                     )
                 )

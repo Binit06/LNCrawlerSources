@@ -32,9 +32,9 @@ class RoyalRoad : Crawler() {
         return url.contains("royalroad.com") || url.contains("royalroadl.com")
     }
 
-    override suspend fun getNovelDetails(novelUrl: String): Novel {
-        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch novel details from $novelUrl")
-        Log.i(name, "Scraping novel: $novelUrl")
+    override suspend fun getNovelMetadata(novelUrl: String): Novel {
+        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch novel metadata from $novelUrl")
+        Log.i(name, "Scraping novel metadata: $novelUrl")
 
         val title = doc.selectFirst(".fic-header h1")?.text() ?: ""
         val author = doc.selectFirst(".fic-header h4 a")?.text() ?: ""
@@ -50,6 +50,22 @@ class RoyalRoad : Crawler() {
             ?: doc.selectFirst(".description")
         val description = descriptionElement?.html()?.trim() ?: ""
 
+        return Novel(
+            url = novelUrl,
+            title = title,
+            author = author,
+            coverUrl = coverUrl,
+            description = description,
+            chapters = emptyList(),
+            crawlerName = name,
+            alternativeNames = ""
+        )
+    }
+
+    override suspend fun getChapterList(novelUrl: String): List<Chapter> {
+        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch chapter list from $novelUrl")
+        Log.i(name, "Scraping chapter list: $novelUrl")
+        
         val chapters = mutableListOf<Chapter>()
 
         // The site populates its paginated table using a JSON array in the script tags.
@@ -107,18 +123,13 @@ class RoyalRoad : Crawler() {
             }
         }
 
-        return prepareNovel(
-            Novel(
-                url = novelUrl,
-                title = title,
-                author = author,
-                coverUrl = coverUrl,
-                description = description,
-                chapters = chapters,
-                crawlerName = name,
-                alternativeNames = "" // RoyalRoad rarely uses alt names, usually tags instead
-            )
-        )
+        return chapters
+    }
+
+    override suspend fun getNovelDetails(novelUrl: String): Novel {
+        val metadata = getNovelMetadata(novelUrl)
+        val chapters = getChapterList(novelUrl)
+        return prepareNovel(metadata.copy(chapters = chapters))
     }
 
     override suspend fun getChapterContent(chapterUrl: String): String? {

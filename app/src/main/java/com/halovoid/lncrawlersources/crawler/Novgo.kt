@@ -31,14 +31,30 @@ class Novgo : Crawler() {
         return url.contains("novgo.net")
     }
 
-    override suspend fun getNovelDetails(novelUrl: String): Novel {
-        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch novel details from $novelUrl")
-        Log.i(name, "Scraping novel: $novelUrl")
+    override suspend fun getNovelMetadata(novelUrl: String): Novel {
+        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch novel metadata from $novelUrl")
+        Log.i(name, "Scraping novel metadata: $novelUrl")
 
         val title = doc.select("h1.title").first()?.text() ?: doc.select("h3.title").first()?.text() ?: ""
         val author = doc.select(".info div:contains(Author) a").text().trim()
         val coverUrl = doc.select(".book img").attr("abs:src")
         val description = doc.select(".desc-text").text().trim()
+
+        return Novel(
+            url = novelUrl,
+            title = title,
+            author = author,
+            coverUrl = coverUrl,
+            description = description,
+            chapters = emptyList(),
+            crawlerName = name,
+            alternativeNames = ""
+        )
+    }
+
+    override suspend fun getChapterList(novelUrl: String): List<Chapter> {
+        val doc = getDocument(novelUrl) ?: throw IOException("Failed to fetch chapter list from $novelUrl")
+        Log.i(name, "Scraping chapter list: $novelUrl")
 
         val chapters = mutableListOf<Chapter>()
 
@@ -67,25 +83,18 @@ class Novgo : Crawler() {
         }
 
         // Clean up duplicate entries and set final indices
-        val finalChapters = chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
+        return chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
             chapter.copy(
                 index = index + 1,
                 volumeId = "${novelUrl}_vol_${(index / chapterPerVolume) + 1}"
             )
         }
+    }
 
-        return prepareNovel(
-            Novel(
-                url = novelUrl,
-                title = title,
-                author = author,
-                coverUrl = coverUrl,
-                description = description,
-                chapters = finalChapters,
-                crawlerName = name,
-                alternativeNames = ""
-            )
-        )
+    override suspend fun getNovelDetails(novelUrl: String): Novel {
+        val metadata = getNovelMetadata(novelUrl)
+        val chapters = getChapterList(novelUrl)
+        return prepareNovel(metadata.copy(chapters = chapters))
     }
 
     override suspend fun getChapterContent(chapterUrl: String): String? {

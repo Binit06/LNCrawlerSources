@@ -31,10 +31,10 @@ class NovelPhoenix : Crawler() {
         return url.contains("novelphoenix.com")
     }
 
-    override suspend fun getNovelDetails(novelUrl: String): Novel {
+    override suspend fun getNovelMetadata(novelUrl: String): Novel {
         val cleanNovelUrl = novelUrl.removeSuffix("/")
-        val doc = getDocument(cleanNovelUrl) ?: throw IOException("Failed to fetch novel details from $novelUrl")
-        Log.i(name, "Scraping novel: $cleanNovelUrl")
+        val doc = getDocument(cleanNovelUrl) ?: throw IOException("Failed to fetch novel metadata from $novelUrl")
+        Log.i(name, "Scraping novel metadata: $cleanNovelUrl")
 
         val title = doc.select("h1.novel-title").text().trim()
         val author = doc.select(".author a[itemprop='author'], .author span[itemprop='author']").text().trim()
@@ -45,73 +45,77 @@ class NovelPhoenix : Crawler() {
             select(".expand").remove()
         }.text().trim()
 
-        val chapters = mutableListOf<Chapter>()
+        return Novel(
+            url = cleanNovelUrl,
+            title = title,
+            author = author,
+            coverUrl = coverUrl,
+            description = description,
+            chapters = emptyList(),
+            crawlerName = name,
+            alternativeNames = null
+        )
+    }
 
+    override suspend fun getChapterList(novelUrl: String): List<Chapter> {
+        val cleanNovelUrl = novelUrl.removeSuffix("/")
         // Novel Phoenix hosts chapters on a separate subpage: /chapters
         val chapterListUrl = "$cleanNovelUrl/chapters"
-        val chaptersDoc = getDocument(chapterListUrl)
+        val chaptersDoc = getDocument(chapterListUrl) ?: throw IOException("Failed to fetch chapter list from $chapterListUrl")
+        
+        Log.i(name, "Scraping chapter list: $chapterListUrl")
+        val chapters = mutableListOf<Chapter>()
 
-        if (chaptersDoc != null) {
-            // Determine maximum pages for pagination
-            var maxPage = 1
-            chaptersDoc.select("ul.pagination li.page-item a.page-link").forEach { element ->
-                val pageUrl = element.attr("href")
-                val pageNum = pageUrl.substringAfter("page=").substringBefore("&").toIntOrNull()
-                if (pageNum != null && pageNum > maxPage) {
-                    maxPage = pageNum
-                }
+        // Determine maximum pages for pagination
+        var maxPage = 1
+        chaptersDoc.select("ul.pagination li.page-item a.page-link").forEach { element ->
+            val pageUrl = element.attr("href")
+            val pageNum = pageUrl.substringAfter("page=").substringBefore("&").toIntOrNull()
+            if (pageNum != null && pageNum > maxPage) {
+                maxPage = pageNum
             }
+        }
 
-            Log.i(name, "Found $maxPage chapter page(s) for $cleanNovelUrl")
+        Log.i(name, "Found $maxPage chapter page(s) for $cleanNovelUrl")
 
-            // Loop through all pages to gather chapters
-            for (i in 1..maxPage) {
-                val pageDoc = if (i == 1) chaptersDoc else getDocument("$chapterListUrl?page=$i")
+        // Loop through all pages to gather chapters
+        for (i in 1..maxPage) {
+            val pageDoc = if (i == 1) chaptersDoc else getDocument("$chapterListUrl?page=$i")
 
-                pageDoc?.select("ul.chapter-list li a")?.forEach { element ->
-                    val chapUrl = element.attr("abs:href")
-                    // Use the strong tag for title if available, fallback to whole anchor text
-                    val chapTitle = element.select("strong.chapter-title").text().ifEmpty {
-                        element.text().replace(element.select(".chapter-no").text(), "").trim()
-                    }
+            pageDoc?.select("ul.chapter-list li a")?.forEach { element ->
+                val chapUrl = element.attr("abs:href")
+                // Use the strong tag for title if available, fallback to whole anchor text
+                val chapTitle = element.select("strong.chapter-title").text().ifEmpty {
+                    element.text().replace(element.select(".chapter-no").text(), "").trim()
+                }
 
-                    chapters.add(
-                        Chapter(
-                            id = 0,
-                            url = chapUrl,
-                            novelUrl = cleanNovelUrl,
-                            title = chapTitle,
-                            index = 0,      // Placeholder - recalculated in prepareNovel
-                            volumeId = "",  // Placeholder - recalculated in prepareNovel
-                            fileLocation = null
-                        )
+                chapters.add(
+                    Chapter(
+                        id = 0,
+                        url = chapUrl,
+                        novelUrl = cleanNovelUrl,
+                        title = chapTitle,
+                        index = 0,      // Recalculated below
+                        volumeId = "",  // Recalculated below
+                        fileLocation = null
                     )
-                }
+                )
             }
-        } else {
-            Log.e(name, "Could not fetch chapter list from $chapterListUrl")
         }
 
         // Clean up duplicate entries and set final indices
-        val finalChapters = chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
+        return chapters.distinctBy { it.url }.mapIndexed { index, chapter ->
             chapter.copy(
                 index = index + 1,
                 volumeId = "${cleanNovelUrl}_vol_${(index / chapterPerVolume) + 1}"
             )
         }
+    }
 
-        return prepareNovel(
-            Novel(
-                url = cleanNovelUrl,
-                title = title,
-                author = author,
-                coverUrl = coverUrl,
-                description = description,
-                chapters = finalChapters,
-                crawlerName = name,
-                alternativeNames = null // Site doesn't seem to have prominent alternative names
-            )
-        )
+    override suspend fun getNovelDetails(novelUrl: String): Novel {
+        val metadata = getNovelMetadata(novelUrl)
+        val chapters = getChapterList(novelUrl)
+        return prepareNovel(metadata.copy(chapters = chapters))
     }
 
     override suspend fun getChapterContent(chapterUrl: String): String? {
