@@ -118,7 +118,7 @@ jobs:
           tag_name: v${{ needs.check-version.outputs.new_version }}
           name: Release v${{ needs.check-version.outputs.new_version }}
           body: "Automated release generated from version bump to ${{ needs.check-version.outputs.new_version }}."
-          draft: false
+          draft: true
           prerelease: ${{ contains(needs.check-version.outputs.new_version, '-alpha') || contains(needs.check-version.outputs.new_version, '-beta') || contains(needs.check-version.outputs.new_version, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
