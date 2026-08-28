@@ -155,7 +155,7 @@ class NovelPhoenix : Crawler() {
 
                 novels.add(
                     Novel(
-                        url = "$baseUrl/book/$slug",
+                        url = "$baseUrl/novel/$slug",
                         title = title,
                         author = "",
                         coverUrl = "$baseUrl/$image",
