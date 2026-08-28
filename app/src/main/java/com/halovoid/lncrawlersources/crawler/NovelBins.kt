@@ -128,6 +128,36 @@ class NovelBins : Crawler() {
     }
 
     /**
+     * Searches for novels on NovelBin based on a query string.
+     * Parses the search results page to return a list of [Novel] objects.
+     *
+     * @param query The search term.
+     * @return A list of novels matching the query.
+     */
+    override suspend fun getSearchResults(query: String): List<Novel> {
+        val searchUrl = "$baseUrl/search-results/?query=${query.replace(" ", "+")}"
+        val doc = getDocument(searchUrl) ?: return emptyList()
+
+        return doc.select(".mt-card-item").map { element ->
+            val title = element.select("h3.mt-card-name").text()
+            val url = element.select(".mt-card-avatar a").attr("abs:href")
+            val coverStyle = element.select(".mt-card-avatar").attr("style")
+            val coverUrl = coverStyle.substringAfter("url('").substringBefore("')")
+
+            Novel(
+                url = url,
+                title = title,
+                author = "",
+                coverUrl = coverUrl,
+                description = "",
+                chapters = emptyList(),
+                crawlerName = name,
+                alternativeNames = ""
+            )
+        }
+    }
+
+    /**
      * Fetches chapter data from NovelBin's internal AJAX API.
      * Used because the main novel page only shows a subset of chapters.
      *

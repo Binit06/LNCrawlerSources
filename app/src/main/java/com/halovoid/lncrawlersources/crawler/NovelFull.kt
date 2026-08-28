@@ -121,4 +121,35 @@ class NovelFull : Crawler() {
             select("a[href*='novelfull.com']").remove()
         }.body().html().trim()
     }
+
+    /**
+     * Searches for novels on NovelFull based on a query string.
+     * Parses the search results page to return a list of [Novel] objects.
+     *
+     * @param query The search term.
+     * @return A list of novels matching the query.
+     */
+    override suspend fun getSearchResults(query: String): List<Novel> {
+        val searchUrl = "$baseUrl/search?keyword=${query.replace(" ", "+")}"
+        val doc = getDocument(searchUrl) ?: return emptyList()
+
+        return doc.select(".list-truyen .row").map { element ->
+            val titleElement = element.select("h3.truyen-title a")
+            val title = titleElement.text()
+            val url = titleElement.attr("abs:href")
+            val coverUrl = element.select("img.cover").attr("abs:src")
+            val author = element.select(".author").text().trim()
+
+            Novel(
+                url = url,
+                title = title,
+                author = author,
+                coverUrl = coverUrl,
+                description = "",
+                chapters = emptyList(),
+                crawlerName = name,
+                alternativeNames = null
+            )
+        }
+    }
 }

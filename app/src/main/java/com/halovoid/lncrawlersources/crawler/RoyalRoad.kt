@@ -152,4 +152,34 @@ class RoyalRoad : Crawler() {
             }
         }.body().html().trim()
     }
+
+    /**
+     * Searches for fictions on Royal Road based on a title query.
+     * Parses the search results page to return a list of [Novel] objects.
+     *
+     * @param query The title to search for.
+     * @return A list of novels matching the query.
+     */
+    override suspend fun getSearchResults(query: String): List<Novel> {
+        val searchUrl = "$baseUrl/fictions/search?title=${query.replace(" ", "+")}"
+        val doc = getDocument(searchUrl) ?: return emptyList()
+
+        return doc.select(".fiction-list-item").map { element ->
+            val titleElement = element.selectFirst(".fiction-title a")
+            val title = titleElement?.text() ?: ""
+            val url = titleElement?.attr("abs:href") ?: ""
+            val coverUrl = element.selectFirst("img[data-type='cover']")?.attr("abs:src") ?: ""
+
+            Novel(
+                url = url,
+                title = title,
+                author = "", // Author not available in the search results list view
+                coverUrl = coverUrl,
+                description = "",
+                chapters = emptyList(),
+                crawlerName = name,
+                alternativeNames = ""
+            )
+        }
+    }
 }

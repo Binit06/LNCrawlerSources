@@ -21,6 +21,6 @@ class CrawlerSourceAggregator {
     }
 
     fun getMinAppVersion(): String {
-        return "1.0.7"
+        return "1.0.9"
     }
 }

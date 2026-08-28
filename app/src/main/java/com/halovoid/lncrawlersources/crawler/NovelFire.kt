@@ -5,6 +5,7 @@ import com.halovoid.lncrawler.api.core.config.CrawlerConfig
 import com.halovoid.lncrawler.api.core.crawler.Crawler
 import com.halovoid.lncrawler.domain.models.Chapter
 import com.halovoid.lncrawler.domain.models.Novel
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.io.IOException
 
@@ -129,5 +130,46 @@ class NovelFire : Crawler() {
         return Jsoup.parse(content).apply {
             select("script, style, iframe, .nf-ads, .box-notice, .box-notification").remove()
         }.body().html().trim()
+    }
+
+    /**
+     * Searches for novels on NovelFire using its AJAX live search endpoint.
+     *
+     * @param query The search term.
+     * @return A list of novels matching the query.
+     */
+    override suspend fun getSearchResults(query: String): List<Novel> {
+        val searchUrl = "$baseUrl/ajax/searchLive?keyword=${query.replace(" ", "%20")}&type=title"
+        val response = fetchHtml(searchUrl) ?: return emptyList()
+
+        return try {
+            val jsonObject = JSONObject(response)
+            val dataArray = jsonObject.getJSONArray("data")
+            val novels = mutableListOf<Novel>()
+
+            for (i in 0 until dataArray.length()) {
+                val item = dataArray.getJSONObject(i)
+                val title = item.getString("title")
+                val slug = item.getString("slug")
+                val image = item.getString("image")
+
+                novels.add(
+                    Novel(
+                        url = "$baseUrl/book/$slug",
+                        title = title,
+                        author = "",
+                        coverUrl = "$baseUrl/$image",
+                        description = "",
+                        chapters = emptyList(),
+                        crawlerName = name,
+                        alternativeNames = null
+                    )
+                )
+            }
+            novels
+        } catch (e: Exception) {
+            Log.e(name, "Error parsing search results from $searchUrl", e)
+            emptyList()
+        }
     }
 }
