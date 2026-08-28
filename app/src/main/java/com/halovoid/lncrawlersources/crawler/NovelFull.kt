@@ -133,12 +133,15 @@ class NovelFull : Crawler() {
         val searchUrl = "$baseUrl/search?keyword=${query.replace(" ", "+")}"
         val doc = getDocument(searchUrl) ?: return emptyList()
 
-        return doc.select(".list-truyen .row").map { element ->
-            val titleElement = element.select("h3.truyen-title a")
+        // Restrict to .col-truyen-main to avoid sidebar results
+        return doc.select(".col-truyen-main .list-truyen .row").mapNotNull { element ->
+            val titleElement = element.selectFirst("h3.truyen-title a") ?: return@mapNotNull null
             val title = titleElement.text()
             val url = titleElement.attr("abs:href")
             val coverUrl = element.select("img.cover").attr("abs:src")
             val author = element.select(".author").text().trim()
+
+            if (title.isEmpty() || url.isEmpty()) return@mapNotNull null
 
             Novel(
                 url = url,
