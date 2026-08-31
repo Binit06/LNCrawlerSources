@@ -1,6 +1,7 @@
 package com.halovoid.lncrawlersources
 
 import com.halovoid.lncrawler.api.core.crawler.Crawler
+import com.halovoid.lncrawlersources.crawler.AsiaNovel
 import com.halovoid.lncrawlersources.crawler.NovelArchive
 import com.halovoid.lncrawlersources.crawler.NovelBins
 import com.halovoid.lncrawlersources.crawler.NovelFire
@@ -13,6 +14,7 @@ class CrawlerSourceAggregator {
     fun getCrawlers(): List<Crawler> {
         return listOf(
             NovelBins(),
+            AsiaNovel(),
             NovelArchive(),
             NovelFull(),
             Novgo(),
