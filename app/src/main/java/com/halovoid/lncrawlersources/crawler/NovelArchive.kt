@@ -11,7 +11,8 @@ import java.io.IOException
 
 /**
  * Crawler implementation for Novel Archive (novelarchive.cc).
- * This crawler uses the site's JSON API for searching, metadata, and chapter content.
+ * Uses the site's primary "Novel Archive" database (chapter_names) as the primary source,
+ * falling back to external sources (MinIO/S3 mirrors) if chapter_names is empty.
  */
 class NovelArchive : Crawler() {
     override val name: String = "Novel Archive"
@@ -43,10 +44,6 @@ class NovelArchive : Crawler() {
         val author = json.optString("author")
         val coverUrl = json.optString("cover_url").let { if (it.startsWith("/")) "$baseUrl$it" else it }
         val description = json.optString("description")
-        
-        // We store the preferred source in the novel's preferred_source field if it exists
-        // However, Novel model doesn't have it, so we might need to "hide" it in URL or metadata if needed.
-        // Actually, we can just fetch it again in getChapterList.
 
         return Novel(
             url = novelUrl,
@@ -69,13 +66,56 @@ class NovelArchive : Crawler() {
         val novelJsonString = fetchHtml(novelApiUrl) ?: throw IOException("Failed to fetch novel metadata from $novelApiUrl")
         val novelJson = JSONObject(novelJsonString).getJSONObject("novel")
         
+        val chapters = mutableListOf<Chapter>()
+
+        // Primary source: Novel Archive's main database (chapter_names or total_chapters)
+        val chapterNames = novelJson.optJSONArray("chapter_names")
+        if (chapterNames != null && chapterNames.length() > 0) {
+            for (i in 0 until chapterNames.length()) {
+                val number = i + 1
+                val rawTitle = chapterNames.optString(i, "")
+                val title = if (rawTitle.isBlank()) "Chapter $number" else rawTitle
+                chapters.add(
+                    Chapter(
+                        id = 0,
+                        url = "$baseUrl/api/novels/$novelId/chapters/$number",
+                        novelUrl = novelUrl,
+                        title = title,
+                        index = number,
+                        volumeId = "${novelUrl}_vol_${(i / chapterPerVolume) + 1}",
+                        fileLocation = null
+                    )
+                )
+            }
+            return chapters
+        }
+
+        val totalChaptersStr = novelJson.optString("total_chapters", "0")
+        val totalChapters = totalChaptersStr.toIntOrNull() ?: 0
+        if (totalChapters > 0) {
+            for (number in 1..totalChapters) {
+                chapters.add(
+                    Chapter(
+                        id = 0,
+                        url = "$baseUrl/api/novels/$novelId/chapters/$number",
+                        novelUrl = novelUrl,
+                        title = "Chapter $number",
+                        index = number,
+                        volumeId = "${novelUrl}_vol_${((number - 1) / chapterPerVolume) + 1}",
+                        fileLocation = null
+                    )
+                )
+            }
+            return chapters
+        }
+
+        // Secondary / Fallback sources: External sources (/api/novels/{id}/sources/{source}/chapters)
         val candidateSources = mutableListOf<String>()
         val preferredSource = novelJson.optString("preferred_source").trim()
         if (preferredSource.isNotEmpty()) {
             candidateSources.add(preferredSource)
         }
 
-        // Fetch available sources if preferred_source is empty or fails
         val sourcesApiUrl = "$baseUrl/api/novels/$novelId/sources"
         val sourcesJsonString = fetchHtml(sourcesApiUrl)
         if (sourcesJsonString != null) {
@@ -91,7 +131,6 @@ class NovelArchive : Crawler() {
             }
         }
 
-        // Add common fallback sources if not present
         for (fallback in listOf("fucknovelpia", "ranobes")) {
             if (!candidateSources.contains(fallback)) {
                 candidateSources.add(fallback)
@@ -101,7 +140,6 @@ class NovelArchive : Crawler() {
         var selectedSource = ""
         var chaptersArray: JSONArray? = null
 
-        // Iterate through candidate sources to find one with non-empty chapters
         for (source in candidateSources) {
             val chaptersApiUrl = "$baseUrl/api/novels/$novelId/sources/$source/chapters"
             val chaptersJsonString = fetchHtml(chaptersApiUrl) ?: continue
@@ -125,7 +163,6 @@ class NovelArchive : Crawler() {
             return emptyList()
         }
 
-        val chapters = mutableListOf<Chapter>()
         for (i in 0 until chaptersArray.length()) {
             val chapterObj = chaptersArray.getJSONObject(i)
             val number = chapterObj.getInt("number")
@@ -134,7 +171,6 @@ class NovelArchive : Crawler() {
             chapters.add(
                 Chapter(
                     id = 0,
-                    // Store source and number in URL to be used in getChapterContent
                     url = "$baseUrl/api/novels/$novelId/sources/$selectedSource/chapters/$number",
                     novelUrl = novelUrl,
                     title = title,
@@ -159,10 +195,44 @@ class NovelArchive : Crawler() {
         Log.i(name, "Scraping chapter: $chapterUrl")
 
         val json = JSONObject(jsonString)
-        val contentHtml = json.optString("content_html")
-        if (contentHtml.isEmpty()) return null
 
-        return contentHtml
+        // Handles default Novel Archive format: {"chapter": {"content": "...", "content_html": "..."}}
+        if (json.has("chapter")) {
+            val chapterObj = json.optJSONObject("chapter") ?: return null
+            val contentHtml = chapterObj.optString("content_html")
+            if (contentHtml.isNotEmpty()) {
+                return formatHtmlContent(contentHtml)
+            }
+            val contentText = chapterObj.optString("content")
+            if (contentText.isNotEmpty()) {
+                return formatTextContent(contentText)
+            }
+        }
+
+        // Handles external source format: {"content_html": "...", "content": "..."}
+        val contentHtml = json.optString("content_html")
+        if (contentHtml.isNotEmpty()) {
+            return formatHtmlContent(contentHtml)
+        }
+
+        val contentText = json.optString("content")
+        if (contentText.isNotEmpty()) {
+            return formatTextContent(contentText)
+        }
+
+        return null
+    }
+
+    private fun formatHtmlContent(html: String): String {
+        return html
+            .replace("src=\"/", "src=\"$baseUrl/")
+            .replace("src='/", "src='$baseUrl/")
+    }
+
+    private fun formatTextContent(text: String): String {
+        return text.split("\n")
+            .filter { it.isNotBlank() }
+            .joinToString("\n") { "<p>${it.trim()}</p>" }
             .replace("src=\"/", "src=\"$baseUrl/")
             .replace("src='/", "src='$baseUrl/")
     }
