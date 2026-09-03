@@ -5,6 +5,7 @@ import com.halovoid.lncrawler.api.core.config.CrawlerConfig
 import com.halovoid.lncrawler.api.core.crawler.Crawler
 import com.halovoid.lncrawler.domain.models.Chapter
 import com.halovoid.lncrawler.domain.models.Novel
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
@@ -68,32 +69,62 @@ class NovelArchive : Crawler() {
         val novelJsonString = fetchHtml(novelApiUrl) ?: throw IOException("Failed to fetch novel metadata from $novelApiUrl")
         val novelJson = JSONObject(novelJsonString).getJSONObject("novel")
         
-        var source = novelJson.optString("preferred_source")
-        if (source.isEmpty()) {
-            // Fetch available sources if preferred_source is empty
-            val sourcesApiUrl = "$baseUrl/api/novels/$novelId/sources"
-            val sourcesJsonString = fetchHtml(sourcesApiUrl)
-            if (sourcesJsonString != null) {
-                val sourcesJson = JSONObject(sourcesJsonString)
-                val sourcesArray = sourcesJson.optJSONArray("sources")
-                if (sourcesArray != null && sourcesArray.length() > 0) {
-                    source = sourcesArray.getJSONObject(0).getString("id")
+        val candidateSources = mutableListOf<String>()
+        val preferredSource = novelJson.optString("preferred_source").trim()
+        if (preferredSource.isNotEmpty()) {
+            candidateSources.add(preferredSource)
+        }
+
+        // Fetch available sources if preferred_source is empty or fails
+        val sourcesApiUrl = "$baseUrl/api/novels/$novelId/sources"
+        val sourcesJsonString = fetchHtml(sourcesApiUrl)
+        if (sourcesJsonString != null) {
+            val sourcesJson = JSONObject(sourcesJsonString)
+            val sourcesArray = sourcesJson.optJSONArray("sources")
+            if (sourcesArray != null) {
+                for (i in 0 until sourcesArray.length()) {
+                    val srcId = sourcesArray.getJSONObject(i).optString("id").trim()
+                    if (srcId.isNotEmpty() && !candidateSources.contains(srcId)) {
+                        candidateSources.add(srcId)
+                    }
                 }
             }
         }
-        
-        if (source.isEmpty()) {
-            // Fallback to what user provided if still empty, just in case
-            source = "fucknovelpia" 
+
+        // Add common fallback sources if not present
+        for (fallback in listOf("fucknovelpia", "ranobes")) {
+            if (!candidateSources.contains(fallback)) {
+                candidateSources.add(fallback)
+            }
         }
 
-        val chaptersApiUrl = "$baseUrl/api/novels/$novelId/sources/$source/chapters"
-        val chaptersJsonString = fetchHtml(chaptersApiUrl) ?: throw IOException("Failed to fetch chapter list from $chaptersApiUrl")
-        Log.i(name, "Scraping chapter list: $chaptersApiUrl")
+        var selectedSource = ""
+        var chaptersArray: JSONArray? = null
 
-        val chaptersJson = JSONObject(chaptersJsonString)
-        val chaptersArray = chaptersJson.getJSONArray("chapters")
-        
+        // Iterate through candidate sources to find one with non-empty chapters
+        for (source in candidateSources) {
+            val chaptersApiUrl = "$baseUrl/api/novels/$novelId/sources/$source/chapters"
+            val chaptersJsonString = fetchHtml(chaptersApiUrl) ?: continue
+            Log.i(name, "Scraping chapter list: $chaptersApiUrl")
+
+            try {
+                val chaptersJson = JSONObject(chaptersJsonString)
+                val arr = chaptersJson.optJSONArray("chapters")
+                if (arr != null && arr.length() > 0) {
+                    selectedSource = source
+                    chaptersArray = arr
+                    break
+                }
+            } catch (e: Exception) {
+                Log.w(name, "Failed to parse chapter list for source $source", e)
+            }
+        }
+
+        if (chaptersArray == null || selectedSource.isEmpty()) {
+            Log.w(name, "No chapters found for any source of novel $novelId")
+            return emptyList()
+        }
+
         val chapters = mutableListOf<Chapter>()
         for (i in 0 until chaptersArray.length()) {
             val chapterObj = chaptersArray.getJSONObject(i)
@@ -104,7 +135,7 @@ class NovelArchive : Crawler() {
                 Chapter(
                     id = 0,
                     // Store source and number in URL to be used in getChapterContent
-                    url = "$baseUrl/api/novels/$novelId/sources/$source/chapters/$number",
+                    url = "$baseUrl/api/novels/$novelId/sources/$selectedSource/chapters/$number",
                     novelUrl = novelUrl,
                     title = title,
                     index = i + 1,
@@ -128,7 +159,12 @@ class NovelArchive : Crawler() {
         Log.i(name, "Scraping chapter: $chapterUrl")
 
         val json = JSONObject(jsonString)
-        return json.optString("content_html")
+        val contentHtml = json.optString("content_html")
+        if (contentHtml.isEmpty()) return null
+
+        return contentHtml
+            .replace("src=\"/", "src=\"$baseUrl/")
+            .replace("src='/", "src='$baseUrl/")
     }
 
     override suspend fun getSearchResults(query: String): List<Novel> {
